@@ -8,7 +8,7 @@ https://blogs.technet.microsoft.com/virtualization/2015/11/23/discrete-device-as
 https://blogs.technet.microsoft.com/virtualization/2015/11/24/discrete-device-assignment-guests-and-linux/
 
 ## Tested OS
-Windows Server 2016. 
+Windows Server 2016 (2019/2022?). 
 
 ## Language
 Translated to English.
