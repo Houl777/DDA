@@ -59,32 +59,36 @@
             this.columnHeaderClass,
             this.columnHeaderLocation});
             this.listView1.FullRowSelect = true;
-            this.listView1.Location = new System.Drawing.Point(12, 12);
+            this.listView1.HideSelection = false;
+            this.listView1.Location = new System.Drawing.Point(16, 16);
+            this.listView1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.listView1.MultiSelect = false;
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(815, 507);
+            this.listView1.Size = new System.Drawing.Size(1085, 675);
             this.listView1.TabIndex = 0;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
+            this.listView1.SelectedIndexChanged += new System.EventHandler(this.listView1_SelectedIndexChanged);
             this.listView1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.listView1_MouseClick);
             // 
             // columnHeaderDevice
             // 
-            this.columnHeaderDevice.Text = "设备";
+            this.columnHeaderDevice.Text = "Equipment";
             this.columnHeaderDevice.Width = 258;
             // 
             // columnHeaderClass
             // 
-            this.columnHeaderClass.Text = "类型";
+            this.columnHeaderClass.Text = "Type";
             this.columnHeaderClass.Width = 86;
             // 
             // columnHeaderLocation
             // 
-            this.columnHeaderLocation.Text = "地址";
+            this.columnHeaderLocation.Text = "Address";
             this.columnHeaderLocation.Width = 418;
             // 
             // contextMenuStrip
             // 
+            this.contextMenuStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.vMNameToolStripMenuItem,
             this.其它toolStripMenuItem,
@@ -95,14 +99,14 @@
             this.toolStripSeparator1,
             this.刷新列表toolStripMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(132, 148);
+            this.contextMenuStrip.Size = new System.Drawing.Size(141, 160);
             this.contextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_Opening);
             // 
             // vMNameToolStripMenuItem
             // 
             this.vMNameToolStripMenuItem.Enabled = false;
             this.vMNameToolStripMenuItem.Name = "vMNameToolStripMenuItem";
-            this.vMNameToolStripMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.vMNameToolStripMenuItem.Size = new System.Drawing.Size(140, 24);
             this.vMNameToolStripMenuItem.Text = "VMName";
             // 
             // 其它toolStripMenuItem
@@ -116,101 +120,104 @@
             this.toolStripSeparator5,
             this.GCCTtoolStripMenuItem});
             this.其它toolStripMenuItem.Name = "其它toolStripMenuItem";
-            this.其它toolStripMenuItem.Size = new System.Drawing.Size(131, 22);
-            this.其它toolStripMenuItem.Text = "其它";
+            this.其它toolStripMenuItem.Size = new System.Drawing.Size(140, 24);
+            this.其它toolStripMenuItem.Text = "Other";
             // 
             // lowMemoryMappedIoSpaceToolStripMenuItem
             // 
             this.lowMemoryMappedIoSpaceToolStripMenuItem.Enabled = false;
             this.lowMemoryMappedIoSpaceToolStripMenuItem.Name = "lowMemoryMappedIoSpaceToolStripMenuItem";
-            this.lowMemoryMappedIoSpaceToolStripMenuItem.Size = new System.Drawing.Size(277, 22);
+            this.lowMemoryMappedIoSpaceToolStripMenuItem.Size = new System.Drawing.Size(320, 26);
             this.lowMemoryMappedIoSpaceToolStripMenuItem.Text = "LowMemoryMappedIoSpace(MB)";
             // 
             // LMMIOtoolStripTextBox
             // 
+            this.LMMIOtoolStripTextBox.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.LMMIOtoolStripTextBox.MaxLength = 4;
             this.LMMIOtoolStripTextBox.Name = "LMMIOtoolStripTextBox";
-            this.LMMIOtoolStripTextBox.Size = new System.Drawing.Size(100, 23);
+            this.LMMIOtoolStripTextBox.Size = new System.Drawing.Size(100, 27);
             this.LMMIOtoolStripTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.LMMIOtoolStripTextBox_KeyDown);
             // 
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(274, 6);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(317, 6);
             // 
             // highMemoryMappedIoSpaceToolStripMenuItem
             // 
             this.highMemoryMappedIoSpaceToolStripMenuItem.Enabled = false;
             this.highMemoryMappedIoSpaceToolStripMenuItem.Name = "highMemoryMappedIoSpaceToolStripMenuItem";
-            this.highMemoryMappedIoSpaceToolStripMenuItem.Size = new System.Drawing.Size(277, 22);
+            this.highMemoryMappedIoSpaceToolStripMenuItem.Size = new System.Drawing.Size(320, 26);
             this.highMemoryMappedIoSpaceToolStripMenuItem.Text = "HighMemoryMappedIoSpace(MB)";
             // 
             // HMMIOtoolStripTextBox
             // 
+            this.HMMIOtoolStripTextBox.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.HMMIOtoolStripTextBox.MaxLength = 5;
             this.HMMIOtoolStripTextBox.Name = "HMMIOtoolStripTextBox";
-            this.HMMIOtoolStripTextBox.Size = new System.Drawing.Size(100, 23);
+            this.HMMIOtoolStripTextBox.Size = new System.Drawing.Size(100, 27);
             this.HMMIOtoolStripTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HMMIOtoolStripTextBox_KeyDown);
             // 
             // toolStripSeparator5
             // 
             this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(274, 6);
+            this.toolStripSeparator5.Size = new System.Drawing.Size(317, 6);
             // 
             // GCCTtoolStripMenuItem
             // 
             this.GCCTtoolStripMenuItem.Checked = true;
             this.GCCTtoolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.GCCTtoolStripMenuItem.Name = "GCCTtoolStripMenuItem";
-            this.GCCTtoolStripMenuItem.Size = new System.Drawing.Size(277, 22);
+            this.GCCTtoolStripMenuItem.Size = new System.Drawing.Size(320, 26);
             this.GCCTtoolStripMenuItem.Text = "GuestControlledCacheTypes";
             this.GCCTtoolStripMenuItem.Click += new System.EventHandler(this.GCCTtoolStripMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(128, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(137, 6);
             // 
             // 添加设备ToolStripMenuItem
             // 
             this.添加设备ToolStripMenuItem.Name = "添加设备ToolStripMenuItem";
-            this.添加设备ToolStripMenuItem.Size = new System.Drawing.Size(131, 22);
-            this.添加设备ToolStripMenuItem.Text = "添加设备";
+            this.添加设备ToolStripMenuItem.Size = new System.Drawing.Size(140, 24);
+            this.添加设备ToolStripMenuItem.Text = "Add a device";
             this.添加设备ToolStripMenuItem.Click += new System.EventHandler(this.添加设备ToolStripMenuItem_Click);
             // 
             // 移除设备ToolStripMenuItem
             // 
             this.移除设备ToolStripMenuItem.Name = "移除设备ToolStripMenuItem";
-            this.移除设备ToolStripMenuItem.Size = new System.Drawing.Size(131, 22);
-            this.移除设备ToolStripMenuItem.Text = "移除设备";
+            this.移除设备ToolStripMenuItem.Size = new System.Drawing.Size(140, 24);
+            this.移除设备ToolStripMenuItem.Text = "Remove the device";
             this.移除设备ToolStripMenuItem.Click += new System.EventHandler(this.移除设备ToolStripMenuItem_Click);
             // 
             // 复制地址toolStripMenuItem
             // 
             this.复制地址toolStripMenuItem.Name = "复制地址toolStripMenuItem";
-            this.复制地址toolStripMenuItem.Size = new System.Drawing.Size(131, 22);
-            this.复制地址toolStripMenuItem.Text = "复制地址";
+            this.复制地址toolStripMenuItem.Size = new System.Drawing.Size(140, 24);
+            this.复制地址toolStripMenuItem.Text = "Copy the address";
             this.复制地址toolStripMenuItem.Click += new System.EventHandler(this.复制地址ToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(128, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(137, 6);
             // 
             // 刷新列表toolStripMenuItem
             // 
             this.刷新列表toolStripMenuItem.Name = "刷新列表toolStripMenuItem";
-            this.刷新列表toolStripMenuItem.Size = new System.Drawing.Size(131, 22);
-            this.刷新列表toolStripMenuItem.Text = "刷新列表";
+            this.刷新列表toolStripMenuItem.Size = new System.Drawing.Size(140, 24);
+            this.刷新列表toolStripMenuItem.Text = "Refresh the list";
             this.刷新列表toolStripMenuItem.Click += new System.EventHandler(this.刷新列表ToolStripMenuItem_Click);
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(839, 531);
+            this.ClientSize = new System.Drawing.Size(1119, 708);
             this.Controls.Add(this.listView1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Discrete Device Assigner";
