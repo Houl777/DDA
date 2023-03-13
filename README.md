@@ -14,5 +14,5 @@ https://blogs.technet.microsoft.com/virtualization/2015/11/24/discrete-device-as
 Windows Server 2016 (2019/2022?). 
 
 ## Changes
-- Translated to English.
+- Translated to English (partially)
 - Added Microsoft script (https://github.com/MicrosoftDocs/Virtualization-Documentation/tree/main/hyperv-samples/benarm-powershell/DDA) to determine suitable devices for DDA
