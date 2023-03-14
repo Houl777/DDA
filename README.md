@@ -1,5 +1,8 @@
+## Releases
+https://github.com/Houl777/DDA/releases
+
 ## What's This
-A GUI tool for Hyper-V's Discrete Device Assignment(DDA), which is supported since Windows Server 2016 TP4. DDA can be used to pass-through PCI-like devices(GPU, network adapter, etc.) to virtual machines, making the VM have direct access to the physical device. DDA can only be achieved by Powershell commandlines; this tool is based on these commands and provides a GUI.
+A GUI tool for Hyper-V Discrete Device Assignment(DDA), which is supported since Windows Server 2016 TP4. DDA can be used to pass-through PCI-like devices(GPU, network adapter, etc.) to virtual machines, making the VM have direct access to the physical device. DDA can only be achieved by Powershell commandlines; this tool is based on these commands and provides a GUI.
 
 ## Reference
 https://blogs.technet.microsoft.com/virtualization/2015/11/19/discrete-device-assignment-description-and-background/
@@ -10,5 +13,6 @@ https://blogs.technet.microsoft.com/virtualization/2015/11/24/discrete-device-as
 ## Tested OS
 Windows Server 2016 (2019/2022?). 
 
-## Language
-Translated to English.
+## Changes
+- Translated to English (partially)
+- Added Microsoft script (https://github.com/MicrosoftDocs/Virtualization-Documentation/tree/main/hyperv-samples/benarm-powershell/DDA) to determine suitable devices for DDA
