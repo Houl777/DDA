@@ -5,6 +5,7 @@ using Microsoft.HyperV.PowerShell;
 using System.Management.Automation.Runspaces;
 using System.Management.Automation;
 using Microsoft.Management.Infrastructure;
+using System.Windows.Forms;
 
 namespace DiscreteDeviceAssigner
 {
@@ -71,6 +72,21 @@ namespace DiscreteDeviceAssigner
                 {
                     return dev.BaseObject as CimInstance;
                 }
+            }
+            return null;
+        }
+
+        public static string GetPnpDeviceFriendlyName(string instanceId)
+        {
+            foreach (var devfn in RunScript(@"
+                                            $instanceID = " + "\"" + instanceId + "\"" + @"
+                                            $instanceID = $instanceID.replace(""PCIP\"",""PCI\"")
+                                            $FindDev = (Get-PnpDevice).Where{ $_.InstanceId -like $instanceId }
+                                            $Output = $FindDev.FriendlyName.ToString()
+                                            $Output"
+                ))
+            {
+                return devfn.BaseObject.ToString();
             }
             return null;
         }
@@ -147,7 +163,7 @@ namespace DiscreteDeviceAssigner
             string id = device.CimInstanceProperties["DeviceId"] != null ? device.CimInstanceProperties["DeviceId"].Value as string : null;
 
             var locationPaths = GetPnpDeviceLocationPath(id);
-            if (locationPaths.Count == 0) throw new InvalidOperationException("无法添加指定类型的设备");
+            if (locationPaths.Count == 0) throw new InvalidOperationException("The specified type of device cannot be added");
 
             try
             {
