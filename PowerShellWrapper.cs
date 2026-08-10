@@ -6,34 +6,73 @@ using System.Management.Automation.Runspaces;
 using System.Management.Automation;
 using Microsoft.Management.Infrastructure;
 using System.Windows.Forms;
+using System.Text.RegularExpressions;
 
 namespace DiscreteDeviceAssigner
 {
     class PowerShellWrapper
     {
+        /// <summary>
+        /// Экранирует строку для безопасного использования в PowerShell-скрипте
+        /// </summary>
+        private static string EscapePowerShellArgument(string argument)
+        {
+            if (string.IsNullOrEmpty(argument))
+                return string.Empty;
+            
+            // Экранируем обратные кавычки, двойные кавычки и знак доллара
+            return Regex.Replace(argument, @"([`""$])", @"`$1");
+        }
+
         private static Collection<PSObject> RunScript(string scriptText)
         {
-            using (Runspace runspace = RunspaceFactory.CreateRunspace())
+            try
             {
-                runspace.Open();
-                Pipeline pipeline = runspace.CreatePipeline();
-                pipeline.Commands.AddScript(scriptText);
-                return pipeline.Invoke();
+                using (Runspace runspace = RunspaceFactory.CreateRunspace())
+                {
+                    runspace.Open();
+                    Pipeline pipeline = runspace.CreatePipeline();
+                    pipeline.Commands.AddScript(scriptText);
+                    return pipeline.Invoke();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"PowerShell script execution error: {ex.Message}");
+                throw;
             }
         }
 
         private static Collection<string> GetPnpDeviceLocationPath(string instanceId)
         {
             Collection<string> results = new Collection<string>();
-            foreach (var dev in RunScript("Get-PnpDeviceProperty -InstanceId \"" + instanceId + "\" DEVPKEY_Device_LocationPaths"))
+            
+            if (string.IsNullOrEmpty(instanceId))
+                return results;
+                
+            string safeInstanceId = EscapePowerShellArgument(instanceId);
+            try
             {
-                CimInstance ci = dev.BaseObject as CimInstance; if (ci == null) continue;
-                var data = ci.CimInstanceProperties["Data"]; if (data == null) continue;
-                var data2 = data.Value as IEnumerable<string>; if (data2 == null) continue;
-                foreach (var d in data2)
+                foreach (var dev in RunScript("Get-PnpDeviceProperty -InstanceId \"" + safeInstanceId + "\" DEVPKEY_Device_LocationPaths"))
                 {
-                    results.Add(d);
+                    CimInstance ci = dev.BaseObject as CimInstance; 
+                    if (ci == null) continue;
+                    
+                    var dataProp = ci.CimInstanceProperties["Data"]; 
+                    if (dataProp == null) continue;
+                    
+                    var data = dataProp.Value as IEnumerable<string>; 
+                    if (data == null) continue;
+                    
+                    foreach (var d in data)
+                    {
+                        results.Add(d);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting PnP device location path for {instanceId}: {ex.Message}");
             }
             return results;
         }
@@ -41,12 +80,19 @@ namespace DiscreteDeviceAssigner
         public static Collection<VirtualMachine> GetVM()
         {
             Collection<VirtualMachine> results = new Collection<VirtualMachine>();
-            foreach (var vm in RunScript("Get-VM"))
+            try
             {
-                if (vm.BaseObject is VirtualMachine)
+                foreach (var vm in RunScript("Get-VM"))
                 {
-                    results.Add(vm.BaseObject as VirtualMachine);
+                    if (vm.BaseObject is VirtualMachine)
+                    {
+                        results.Add(vm.BaseObject as VirtualMachine);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting VMs: {ex.Message}");
             }
             return results;
         }
@@ -54,39 +100,73 @@ namespace DiscreteDeviceAssigner
         public static Collection<VMAssignedDevice> GetVMAssignableDevice(VirtualMachine vm)
         {
             Collection<VMAssignedDevice> results = new Collection<VMAssignedDevice>();
-            foreach (var vmad in RunScript("Get-VMAssignableDevice -VMName \"" + vm.Name + "\""))
+            
+            if (vm == null || string.IsNullOrEmpty(vm.Name))
+                return results;
+                
+            string safeVmName = EscapePowerShellArgument(vm.Name);
+            try
             {
-                if (vmad.BaseObject is VMAssignedDevice)
+                foreach (var vmad in RunScript("Get-VMAssignableDevice -VMName \"" + safeVmName + "\""))
                 {
-                    results.Add(vmad.BaseObject as VMAssignedDevice);
+                    if (vmad.BaseObject is VMAssignedDevice)
+                    {
+                        results.Add(vmad.BaseObject as VMAssignedDevice);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting assignable devices for VM {vm.Name}: {ex.Message}");
             }
             return results;
         }
 
         public static CimInstance GetPnpDevice(string instanceId)
         {
-            foreach (var dev in RunScript("Get-PnpDevice -InstanceId \"" + instanceId + "\""))
+            if (string.IsNullOrEmpty(instanceId))
+                return null;
+                
+            string safeInstanceId = EscapePowerShellArgument(instanceId);
+            try
             {
-                if (dev.BaseObject is CimInstance)
+                foreach (var dev in RunScript("Get-PnpDevice -InstanceId \"" + safeInstanceId + "\""))
                 {
-                    return dev.BaseObject as CimInstance;
+                    if (dev.BaseObject is CimInstance)
+                    {
+                        return dev.BaseObject as CimInstance;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting PnP device {instanceId}: {ex.Message}");
             }
             return null;
         }
 
         public static string GetPnpDeviceFriendlyName(string instanceId)
         {
-            foreach (var devfn in RunScript(@"
-                                            $instanceID = " + "\"" + instanceId + "\"" + @"
-                                            $instanceID = $instanceID.replace(""PCIP\"",""PCI\"")
-                                            $FindDev = (Get-PnpDevice).Where{ $_.InstanceId -like $instanceId }
-                                            $Output = $FindDev.FriendlyName.ToString()
-                                            $Output"
-                ))
+            if (string.IsNullOrEmpty(instanceId))
+                return null;
+                
+            string safeInstanceId = EscapePowerShellArgument(instanceId);
+            try
             {
-                return devfn.BaseObject.ToString();
+                foreach (var devfn in RunScript(@$"
+                                        $instanceID = """ + safeInstanceId + @"""
+                                        $instanceID = $instanceID.replace(""PCIP"",""PCI"")
+                                        $FindDev = (Get-PnpDevice).Where{{ $_.InstanceId -like $instanceId }}
+                                        $Output = $FindDev.FriendlyName.ToString()
+                                        $Output"
+                    ))
+                {
+                    return devfn.BaseObject?.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting PnP device friendly name for {instanceId}: {ex.Message}");
             }
             return null;
         }
@@ -94,7 +174,9 @@ namespace DiscreteDeviceAssigner
         public static Collection<CimInstance> GetPnpDevice()
         {
             Collection<CimInstance> results = new Collection<CimInstance>();
-            foreach (var dev in RunScript(@"
+            try
+            {
+                foreach (var dev in RunScript(@"
                 $FR = @()
                 $pcidevs = Get-PnpDevice -PresentOnly | Where-Object {$_.InstanceId -like ""PCI*""}
                 foreach ($pcidev in $pcidevs) {
@@ -118,69 +200,145 @@ namespace DiscreteDeviceAssigner
                     results.Add(dev.BaseObject as CimInstance);
                 }
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting PnP devices: {ex.Message}");
+            }
             return results;
         }
 
         public static void SetGuestControlledCacheTypes(VirtualMachine vm, bool value)
         {
-            if (value)
+            if (vm == null || string.IsNullOrEmpty(vm.Name))
+                return;
+                
+            string safeVmName = EscapePowerShellArgument(vm.Name);
+            try
             {
-                RunScript("Set-VM \"" + vm.Name + "\" -GuestControlledCacheTypes $true");
+                if (value)
+                {
+                    RunScript("Set-VM \"" + safeVmName + "\" -GuestControlledCacheTypes $true");
+                }
+                else
+                {
+                    RunScript("Set-VM \"" + safeVmName + "\" -GuestControlledCacheTypes $false");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                RunScript("Set-VM \"" + vm.Name + "\" -GuestControlledCacheTypes $false");
+                System.Diagnostics.Debug.WriteLine($"Error setting GuestControlledCacheTypes for VM {vm.Name}: {ex.Message}");
             }
         }
 
         public static void SetLowMemoryMappedIoSpace(VirtualMachine vm, uint bytes)
         {
-            RunScript("Set-VM \"" + vm.Name + "\" -LowMemoryMappedIoSpace " + bytes);
+            if (vm == null || string.IsNullOrEmpty(vm.Name))
+                return;
+                
+            string safeVmName = EscapePowerShellArgument(vm.Name);
+            try
+            {
+                RunScript("Set-VM \"" + safeVmName + "\" -LowMemoryMappedIoSpace " + bytes);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error setting LowMemoryMappedIoSpace for VM {vm.Name}: {ex.Message}");
+            }
         }
 
         public static void SetHighMemoryMappedIoSpace(VirtualMachine vm, ulong bytes)
         {
-            RunScript("Set-VM \"" + vm.Name + "\" -HighMemoryMappedIoSpace " + bytes);
+            if (vm == null || string.IsNullOrEmpty(vm.Name))
+                return;
+                
+            string safeVmName = EscapePowerShellArgument(vm.Name);
+            try
+            {
+                RunScript("Set-VM \"" + safeVmName + "\" -HighMemoryMappedIoSpace " + bytes);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error setting HighMemoryMappedIoSpace for VM {vm.Name}: {ex.Message}");
+            }
         }
 
         public static void RemoveVMAssignableDevice(VirtualMachine vm, VMAssignedDevice device)
         {
-            RunScript("Remove-VMAssignableDevice -LocationPath \"" + device.LocationPath + "\" -VMName \"" + vm.Name + "\"");
+            if (vm == null || device == null || string.IsNullOrEmpty(device.LocationPath))
+                return;
+                
+            string safeVmName = EscapePowerShellArgument(vm.Name);
+            string safeLocationPath = EscapePowerShellArgument(device.LocationPath);
+            string safeInstanceId = EscapePowerShellArgument(device.InstanceID);
+            
             try
             {
-                RunScript("Mount-VmHostAssignableDevice -LocationPath \"" + device.LocationPath + "\"");
+                RunScript("Remove-VMAssignableDevice -LocationPath \"" + safeLocationPath + "\" -VMName \"" + safeVmName + "\"");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error removing assignable device from VM {vm.Name}: {ex.Message}");
+            }
             try
             {
-                RunScript("Enable-PnpDevice -InstanceId \"" + device.InstanceID + "\" -Confirm:$false");
+                RunScript("Mount-VmHostAssignableDevice -LocationPath \"" + safeLocationPath + "\"");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Игнорируем ошибку размонтирования, устройство может быть уже смонтировано
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not mount device: {ex.Message}");
+            }
+            try
+            {
+                RunScript("Enable-PnpDevice -InstanceId \"" + safeInstanceId + "\" -Confirm:$false");
+            }
+            catch (Exception ex)
+            {
+                // Игнорируем ошибку включения устройства, оно может быть уже включено
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not enable device: {ex.Message}");
+            }
         }
 
         public static void AddVMAssignableDevice(VirtualMachine vm, CimInstance device)
         {
+            if (vm == null || device == null)
+                return;
+                
             string id = device.CimInstanceProperties["DeviceId"] != null ? device.CimInstanceProperties["DeviceId"].Value as string : null;
 
-            var locationPaths = GetPnpDeviceLocationPath(id);
-            if (locationPaths.Count == 0) throw new InvalidOperationException("The specified type of device cannot be added");
+            if (string.IsNullOrEmpty(id))
+                throw new InvalidOperationException("Device ID is null or empty");
 
+            var locationPaths = GetPnpDeviceLocationPath(id);
+            if (locationPaths.Count == 0) 
+                throw new InvalidOperationException("The specified type of device cannot be added");
+
+            string safeVmName = EscapePowerShellArgument(vm.Name);
+            string safeLocationPath = EscapePowerShellArgument(locationPaths[0]);
+            string safeInstanceId = EscapePowerShellArgument(id);
+            
             try
             {
                 if (vm.AutomaticStopAction != StopAction.TurnOff)
                 {
-                    RunScript("Set-VM -AutomaticStopAction:TurnOff -VMName \"" + vm.Name + "\"");
+                    RunScript("Set-VM -AutomaticStopAction:TurnOff -VMName \"" + safeVmName + "\"");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not set AutomaticStopAction: {ex.Message}");
+            }
             try
             {
                 if (vm.DynamicMemoryEnabled && vm.MemoryStartup != vm.MemoryMinimum)
                 {
-                    RunScript("Set-VM -MemoryStartupBytes:" + vm.MemoryMinimum + " -VMName \"" + vm.Name + "\"");
+                    RunScript("Set-VM -MemoryStartupBytes:" + vm.MemoryMinimum + " -VMName \"" + safeVmName + "\"");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not set MemoryStartupBytes: {ex.Message}");
+            }
             try
             {
                 if (!vm.GuestControlledCacheTypes)
@@ -188,19 +346,36 @@ namespace DiscreteDeviceAssigner
                     SetGuestControlledCacheTypes(vm, true);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not set GuestControlledCacheTypes: {ex.Message}");
+            }
 
             try
             {
-                RunScript("Disable-PnpDevice -InstanceId \"" + id + "\" -Confirm:$false");
+                RunScript("Disable-PnpDevice -InstanceId \"" + safeInstanceId + "\" -Confirm:$false");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not disable device: {ex.Message}");
+            }
             try
             {
-                RunScript("Dismount-VmHostAssignableDevice -LocationPath \"" + locationPaths[0] + "\" -force");
+                RunScript("Dismount-VmHostAssignableDevice -LocationPath \"" + safeLocationPath + "\" -force");
             }
-            catch { }
-            RunScript("Add-VMAssignableDevice -LocationPath \"" + locationPaths[0] + "\" -VMName \"" + vm.Name + "\"");
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not dismount device: {ex.Message}");
+            }
+            try
+            {
+                RunScript("Add-VMAssignableDevice -LocationPath \"" + safeLocationPath + "\" -VMName \"" + safeVmName + "\"");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error adding assignable device to VM {vm.Name}: {ex.Message}");
+                throw;
+            }
         }
     }
 }
