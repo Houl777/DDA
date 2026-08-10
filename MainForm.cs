@@ -40,26 +40,27 @@ namespace DiscreteDeviceAssigner
             var lviss = new List<ListViewItem>[vms.Count];
             try
             {
-                Parallel.For(0, vms.Count, (int i) =>
+                for (int i = 0; i < vms.Count; i++)
                 {
                     var vm = vms[i];
                     if (vm == null)
                     {
                         lviss[i] = new List<ListViewItem>();
-                        return;
+                        continue;
                     }
                     
                     var group = groups[i];
                     lviss[i] = new List<ListViewItem>();
                     var lvis = lviss[i];
 
-                    foreach (var dd in PowerShellWrapper.GetVMAssignableDevice(vm))
+                    var devices = await PowerShellWrapper.GetVMAssignableDeviceAsync(vm);
+                    foreach (var dd in devices)
                     {
                         if (dd == null)
                             continue;
                             
-                        var dev = PowerShellWrapper.GetPnpDevice(dd.InstanceID);
-                        var fn = PowerShellWrapper.GetPnpDeviceFriendlyName(dd.InstanceID);
+                        var dev = await PowerShellWrapper.GetPnpDeviceAsync(dd.InstanceID);
+                        var fn = await PowerShellWrapper.GetPnpDeviceFriendlyNameAsync(dd.InstanceID);
                         //string name = dev.CimInstanceProperties["Name"] != null ? dev.CimInstanceProperties["Name"].Value as string : null;
                         string name = fn;
                         string clas = dev?.CimInstanceProperties["PnpClass"] != null ? dev.CimInstanceProperties["PnpClass"].Value as string : null;
@@ -72,7 +73,7 @@ namespace DiscreteDeviceAssigner
                     {
                         Tag = new DeviceData(vm, null),
                     });
-                });
+                }
             }
             catch (Exception ex)
             {
@@ -198,7 +199,7 @@ namespace DiscreteDeviceAssigner
                 {
                     try
                     {
-                        PowerShellWrapper.AddVMAssignableDevice(data.Item1, dev);
+                        await PowerShellWrapper.AddVMAssignableDeviceAsync(data.Item1, dev);
                     }
                     catch (Exception ex)
                     {
@@ -221,7 +222,7 @@ namespace DiscreteDeviceAssigner
             {
                 try
                 {
-                    PowerShellWrapper.RemoveVMAssignableDevice(data.Item1, data.Item2);
+                    await PowerShellWrapper.RemoveVMAssignableDeviceAsync(data.Item1, data.Item2);
                 }
                 catch (Exception ex)
                 {
@@ -247,7 +248,7 @@ namespace DiscreteDeviceAssigner
         }
 
         //GuestControlledCacheTypes
-        private void GCCTtoolStripMenuItem_Click(object sender, EventArgs e)
+        private async void GCCTtoolStripMenuItem_Click(object sender, EventArgs e)
         {
             DeviceData data = contextMenuStrip.Tag as DeviceData;
             if (data == null || data.Item1 == null)
@@ -255,7 +256,7 @@ namespace DiscreteDeviceAssigner
                 
             try
             {
-                PowerShellWrapper.SetGuestControlledCacheTypes(data.Item1, !GCCTtoolStripMenuItem.Checked);
+                await PowerShellWrapper.SetGuestControlledCacheTypesAsync(data.Item1, !GCCTtoolStripMenuItem.Checked);
             }
             catch (Exception ex)
             {
@@ -264,7 +265,7 @@ namespace DiscreteDeviceAssigner
         }
 
         //HighMemoryMappedIoSpace
-        private void HMMIOtoolStripTextBox_KeyDown(object sender, KeyEventArgs e)
+        private async void HMMIOtoolStripTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -291,7 +292,7 @@ namespace DiscreteDeviceAssigner
                     {
                         try
                         {
-                            PowerShellWrapper.SetHighMemoryMappedIoSpace(vm, bytes);
+                            await PowerShellWrapper.SetHighMemoryMappedIoSpaceAsync(vm, bytes);
                             //Success
                             contextMenuStrip.Close();
                             return;
@@ -318,7 +319,7 @@ namespace DiscreteDeviceAssigner
         }
 
         //LowMemoryMappedIoSpace
-        private void LMMIOtoolStripTextBox_KeyDown(object sender, KeyEventArgs e)
+        private async void LMMIOtoolStripTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -345,7 +346,7 @@ namespace DiscreteDeviceAssigner
                     {
                         try
                         {
-                            PowerShellWrapper.SetLowMemoryMappedIoSpace(vm, bytes);
+                            await PowerShellWrapper.SetLowMemoryMappedIoSpaceAsync(vm, bytes);
                             //Success
                             contextMenuStrip.Close();
                             return;
