@@ -1,20 +1,28 @@
 ```
 # Compiled and build artifacts
-*.obj
 *.exe
 *.dll
 *.pdb
-*.userprefs
-*.cache
-*.tmp
-*.log
-
-# Dependencies
-packages/
+*.obj
+*.lib
+*.so
+*.dylib
 bin/
 obj/
 Debug/
 Release/
+x64/
+x86/
+
+# Dependencies
+packages/
+node_modules/
+vendor/
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
 
 # Environment
 .env
@@ -24,14 +32,20 @@ Release/
 # Editors
 .vs/
 .vscode/
+.idea/
 *.user
-*.suo
 *.userosscache
-*.sln.docstates
+*.suo
+*.csproj.user
 
 # OS generated files
 .DS_Store
 Thumbs.db
-ehthumbs.db
-Icon?
+desktop.ini
+
+# Build results
+dist/
+build/
+target/
+out/
 ```
