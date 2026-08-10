@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -17,13 +17,13 @@ namespace DiscreteDeviceAssigner
         }
 
         //Update the virtual machine and appliance display
-        private void UpdateVM()
+        private async Task UpdateVMAsync()
         {
             listView1.Groups.Clear();
             listView1.Items.Clear();
 
             //Get a list of virtual machines
-            var vms = PowerShellWrapper.GetVM();
+            var vms = await PowerShellWrapper.GetVMAsync();
             if (vms == null || vms.Count == 0)
                 return;
                 
@@ -102,7 +102,7 @@ namespace DiscreteDeviceAssigner
         private async void Form1_Load(object sender, EventArgs e)
         {
             await Task.Delay(1);
-            UpdateVM();
+            await UpdateVMAsync();
         }
 
         //Call out the right-click menu
@@ -182,7 +182,7 @@ namespace DiscreteDeviceAssigner
         }
 
         //Add a device
-        private void AddDeviceToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void AddDeviceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DeviceData data = contextMenuStrip.Tag as DeviceData;
             if (data == null || data.Item1 == null)
@@ -205,13 +205,13 @@ namespace DiscreteDeviceAssigner
                         System.Diagnostics.Debug.WriteLine($"Error adding device: {ex.Message}");
                         MessageBox.Show(ex.Message, "Error");
                     }
-                    UpdateVM();
+                    await UpdateVMAsync();
                 }
             }
         }
 
         //Remove a device
-        private void RemoveDeviceToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void RemoveDeviceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DeviceData data = contextMenuStrip.Tag as DeviceData;
             if (data == null || data.Item1 == null || data.Item2 == null)
@@ -227,7 +227,7 @@ namespace DiscreteDeviceAssigner
                 {
                     MessageBox.Show(ex.Message, "Error");
                 }
-                UpdateVM();
+                await UpdateVMAsync();
             }
         }
 
@@ -241,9 +241,9 @@ namespace DiscreteDeviceAssigner
         }
 
         //Refresh list
-        private void RefreshToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void RefreshToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            UpdateVM();
+            await UpdateVMAsync();
         }
 
         //GuestControlledCacheTypes

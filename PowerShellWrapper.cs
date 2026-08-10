@@ -1,15 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using Microsoft.HyperV.PowerShell;
 using System.Management.Automation.Runspaces;
 using System.Management.Automation;
 using Microsoft.Management.Infrastructure;
-using System.Windows.Forms;
 using System.Text.RegularExpressions;
 
 namespace DiscreteDeviceAssigner
 {
+    /// <summary>
+    /// Результат выполнения PowerShell-команды
+    /// </summary>
+    public class PowerShellResult<T>
+    {
+        public T Data { get; set; }
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; }
+        
+        public static PowerShellResult<T> SuccessResult(T data) => new PowerShellResult<T> { Data = data, Success = true };
+        public static PowerShellResult<T> FailureResult(string error) => new PowerShellResult<T> { Success = false, ErrorMessage = error };
+    }
+
     class PowerShellWrapper
     {
         /// <summary>
@@ -41,6 +54,11 @@ namespace DiscreteDeviceAssigner
                 System.Diagnostics.Debug.WriteLine($"PowerShell script execution error: {ex.Message}");
                 throw;
             }
+        }
+
+        private static async Task<Collection<PSObject>> RunScriptAsync(string scriptText)
+        {
+            return await Task.Run(() => RunScript(scriptText));
         }
 
         private static Collection<string> GetPnpDeviceLocationPath(string instanceId)
