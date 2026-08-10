@@ -95,6 +95,11 @@ namespace DiscreteDeviceAssigner
             return results;
         }
 
+        public static async Task<Collection<VirtualMachine>> GetVMAsync()
+        {
+            return await Task.Run(() => GetVM());
+        }
+
         public static Collection<VirtualMachine> GetVM()
         {
             Collection<VirtualMachine> results = new Collection<VirtualMachine>();
@@ -113,6 +118,11 @@ namespace DiscreteDeviceAssigner
                 System.Diagnostics.Debug.WriteLine($"Error getting VMs: {ex.Message}");
             }
             return results;
+        }
+
+        public static async Task<Collection<VMAssignedDevice>> GetVMAssignableDeviceAsync(VirtualMachine vm)
+        {
+            return await Task.Run(() => GetVMAssignableDevice(vm));
         }
 
         public static Collection<VMAssignedDevice> GetVMAssignableDevice(VirtualMachine vm)
@@ -140,6 +150,11 @@ namespace DiscreteDeviceAssigner
             return results;
         }
 
+        public static async Task<CimInstance> GetPnpDeviceAsync(string instanceId)
+        {
+            return await Task.Run(() => GetPnpDevice(instanceId));
+        }
+
         public static CimInstance GetPnpDevice(string instanceId)
         {
             if (string.IsNullOrEmpty(instanceId))
@@ -161,6 +176,11 @@ namespace DiscreteDeviceAssigner
                 System.Diagnostics.Debug.WriteLine($"Error getting PnP device {instanceId}: {ex.Message}");
             }
             return null;
+        }
+
+        public static async Task<string> GetPnpDeviceFriendlyNameAsync(string instanceId)
+        {
+            return await Task.Run(() => GetPnpDeviceFriendlyName(instanceId));
         }
 
         public static string GetPnpDeviceFriendlyName(string instanceId)
@@ -225,6 +245,11 @@ namespace DiscreteDeviceAssigner
             return results;
         }
 
+        public static async Task SetGuestControlledCacheTypesAsync(VirtualMachine vm, bool value)
+        {
+            await Task.Run(() => SetGuestControlledCacheTypes(vm, value));
+        }
+
         public static void SetGuestControlledCacheTypes(VirtualMachine vm, bool value)
         {
             if (vm == null || string.IsNullOrEmpty(vm.Name))
@@ -248,6 +273,11 @@ namespace DiscreteDeviceAssigner
             }
         }
 
+        public static async Task SetLowMemoryMappedIoSpaceAsync(VirtualMachine vm, uint bytes)
+        {
+            await Task.Run(() => SetLowMemoryMappedIoSpace(vm, bytes));
+        }
+
         public static void SetLowMemoryMappedIoSpace(VirtualMachine vm, uint bytes)
         {
             if (vm == null || string.IsNullOrEmpty(vm.Name))
@@ -264,6 +294,11 @@ namespace DiscreteDeviceAssigner
             }
         }
 
+        public static async Task SetHighMemoryMappedIoSpaceAsync(VirtualMachine vm, ulong bytes)
+        {
+            await Task.Run(() => SetHighMemoryMappedIoSpace(vm, bytes));
+        }
+
         public static void SetHighMemoryMappedIoSpace(VirtualMachine vm, ulong bytes)
         {
             if (vm == null || string.IsNullOrEmpty(vm.Name))
@@ -278,6 +313,11 @@ namespace DiscreteDeviceAssigner
             {
                 System.Diagnostics.Debug.WriteLine($"Error setting HighMemoryMappedIoSpace for VM {vm.Name}: {ex.Message}");
             }
+        }
+
+        public static async Task RemoveVMAssignableDeviceAsync(VirtualMachine vm, VMAssignedDevice device)
+        {
+            await Task.Run(() => RemoveVMAssignableDevice(vm, device));
         }
 
         public static void RemoveVMAssignableDevice(VirtualMachine vm, VMAssignedDevice device)
@@ -315,6 +355,11 @@ namespace DiscreteDeviceAssigner
                 // Игнорируем ошибку включения устройства, оно может быть уже включено
                 System.Diagnostics.Debug.WriteLine($"Warning: Could not enable device: {ex.Message}");
             }
+        }
+
+        public static async Task AddVMAssignableDeviceAsync(VirtualMachine vm, CimInstance device)
+        {
+            await Task.Run(() => AddVMAssignableDevice(vm, device));
         }
 
         public static void AddVMAssignableDevice(VirtualMachine vm, CimInstance device)

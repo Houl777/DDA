@@ -1,28 +1,18 @@
 ```
-# Compiled and build artifacts
+# Build artifacts
+*.obj
 *.exe
 *.dll
 *.pdb
-*.obj
-*.lib
-*.so
-*.dylib
-bin/
-obj/
-Debug/
-Release/
-x64/
-x86/
+*.userprefs
 
 # Dependencies
 packages/
-node_modules/
-vendor/
+bin/
+obj/
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.temp
 
 # Environment
 .env
@@ -31,21 +21,18 @@ vendor/
 
 # Editors
 .vs/
-.vscode/
 .idea/
-*.user
-*.userosscache
-*.suo
-*.csproj.user
+*.swp
+*.swo
 
-# OS generated files
+# OS
 .DS_Store
 Thumbs.db
-desktop.ini
 
-# Build results
-dist/
-build/
-target/
-out/
+# Testing
+TestResults/
+
+# NuGet
+*.nupkg
+.nuget/
 ```
