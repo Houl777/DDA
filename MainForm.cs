@@ -24,39 +24,60 @@ namespace DiscreteDeviceAssigner
 
             //Get a list of virtual machines
             var vms = PowerShellWrapper.GetVM();
+            if (vms == null || vms.Count == 0)
+                return;
+                
             var groups = new List<ListViewGroup>();
             foreach (var vm in vms)
             {
+                if (vm == null || string.IsNullOrEmpty(vm.Name))
+                    continue;
                 ListViewGroup group = new ListViewGroup("[" + vm.State + "]" + vm.Name);
                 groups.Add(group);
             }
 
             //Get a list of devices under each virtual machine
             var lviss = new List<ListViewItem>[vms.Count];
-            Parallel.For(0, vms.Count, (int i) =>
+            try
             {
-                var vm = vms[i];
-                var group = groups[i];
-                lviss[i] = new List<ListViewItem>();
-                var lvis = lviss[i];
-
-                foreach (var dd in PowerShellWrapper.GetVMAssignableDevice(vm))
+                Parallel.For(0, vms.Count, (int i) =>
                 {
-                    var dev = PowerShellWrapper.GetPnpDevice(dd.InstanceID);
-                    var fn = PowerShellWrapper.GetPnpDeviceFriendlyName(dd.InstanceID);
-                    //string name = dev.CimInstanceProperties["Name"] != null ? dev.CimInstanceProperties["Name"].Value as string : null;
-                    string name = fn;
-                    string clas = dev.CimInstanceProperties["PnpClass"] != null ? dev.CimInstanceProperties["PnpClass"].Value as string : null;
-                    lvis.Add(new ListViewItem(new string[] { name != null ? name : "", clas != null ? clas : "", dd.LocationPath }, group)
+                    var vm = vms[i];
+                    if (vm == null)
                     {
-                        Tag = new DeviceData(vm, dd),
+                        lviss[i] = new List<ListViewItem>();
+                        return;
+                    }
+                    
+                    var group = groups[i];
+                    lviss[i] = new List<ListViewItem>();
+                    var lvis = lviss[i];
+
+                    foreach (var dd in PowerShellWrapper.GetVMAssignableDevice(vm))
+                    {
+                        if (dd == null)
+                            continue;
+                            
+                        var dev = PowerShellWrapper.GetPnpDevice(dd.InstanceID);
+                        var fn = PowerShellWrapper.GetPnpDeviceFriendlyName(dd.InstanceID);
+                        //string name = dev.CimInstanceProperties["Name"] != null ? dev.CimInstanceProperties["Name"].Value as string : null;
+                        string name = fn;
+                        string clas = dev?.CimInstanceProperties["PnpClass"] != null ? dev.CimInstanceProperties["PnpClass"].Value as string : null;
+                        lvis.Add(new ListViewItem(new string[] { name != null ? name : "", clas != null ? clas : "", dd.LocationPath }, group)
+                        {
+                            Tag = new DeviceData(vm, dd),
+                        });
+                    }
+                    lvis.Add(new ListViewItem("...", group)
+                    {
+                        Tag = new DeviceData(vm, null),
                     });
-                }
-                lvis.Add(new ListViewItem("...", group)
-                {
-                    Tag = new DeviceData(vm, null),
                 });
-            });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating VM list: {ex.Message}");
+            }
 
             //Update the ListView
             listView1.BeginUpdate();
@@ -66,9 +87,12 @@ namespace DiscreteDeviceAssigner
             }
             foreach (var lvis in lviss)
             {
-                foreach (var lvi in lvis)
+                if (lvis != null)
                 {
-                    listView1.Items.Add(lvi);
+                    foreach (var lvi in lvis)
+                    {
+                        listView1.Items.Add(lvi);
+                    }
                 }
             }
             listView1.EndUpdate();
@@ -89,8 +113,14 @@ namespace DiscreteDeviceAssigner
                 if (listView1.SelectedItems.Count != 0)
                 {
                     DeviceData data = listView1.SelectedItems[0].Tag as DeviceData;
+                    if (data == null || data.Item1 == null)
+                        return;
+                        
                     contextMenuStrip.Tag = data;
-                    contextMenuStrip.Items[0].Text = data.Item1.Name;
+                    if (!string.IsNullOrEmpty(data.Item1.Name))
+                    {
+                        contextMenuStrip.Items[0].Text = data.Item1.Name;
+                    }
                     contextMenuStrip.Show(sender as Control, e.Location);
                 }
             }
@@ -100,6 +130,12 @@ namespace DiscreteDeviceAssigner
         private void contextMenuStrip_Opening(object sender, CancelEventArgs e)
         {
             DeviceData data = contextMenuStrip.Tag as DeviceData;
+            if (data == null || data.Item1 == null)
+            {
+                e.Cancel = true;
+                return;
+            }
+            
             if (data.Item2 == null)
             {
                 RemoveDeviceToolStripMenuItem.Enabled = false;
@@ -116,22 +152,49 @@ namespace DiscreteDeviceAssigner
                 //This sentence will inexplicably throw an exception
                 lowMMIO = data.Item1.LowMemoryMappedIoSpace;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not get LowMemoryMappedIoSpace: {ex.Message}");
+            }
             LMMIOtoolStripTextBox.Text = (lowMMIO / 1024 / 1024).ToString();
-            HMMIOtoolStripTextBox.Text = (data.Item1.HighMemoryMappedIoSpace / 1024 / 1024).ToString();
-            GCCTtoolStripMenuItem.Checked = data.Item1.GuestControlledCacheTypes;
+            
+            ulong highMMIO = 0;
+            try
+            {
+                highMMIO = data.Item1.HighMemoryMappedIoSpace;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not get HighMemoryMappedIoSpace: {ex.Message}");
+            }
+            HMMIOtoolStripTextBox.Text = (highMMIO / 1024 / 1024).ToString();
+            
+            bool gcct = false;
+            try
+            {
+                gcct = data.Item1.GuestControlledCacheTypes;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not get GuestControlledCacheTypes: {ex.Message}");
+            }
+            GCCTtoolStripMenuItem.Checked = gcct;
         }
 
         //Add a device
         private void AddDeviceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DeviceData data = contextMenuStrip.Tag as DeviceData;
+            if (data == null || data.Item1 == null)
+                return;
+                
             CimInstance dev = new PnpDeviceForm().GetResult();
             if (dev != null)
             {
                 string name = dev.CimInstanceProperties["Name"] != null ? dev.CimInstanceProperties["Name"].Value as string : null;
                 if (name == null) name = "";
-                if (MessageBox.Show("Do you want to add the next device“" + name + "”to the next VM“" + data.Item1.Name + "”?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                string vmName = !string.IsNullOrEmpty(data.Item1.Name) ? data.Item1.Name : "Unknown VM";
+                if (MessageBox.Show($"Do you want to add the next device \"{name}\" to the next VM \"{vmName}\"?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
                     try
                     {
@@ -139,6 +202,7 @@ namespace DiscreteDeviceAssigner
                     }
                     catch (Exception ex)
                     {
+                        System.Diagnostics.Debug.WriteLine($"Error adding device: {ex.Message}");
                         MessageBox.Show(ex.Message, "Error");
                     }
                     UpdateVM();
@@ -150,7 +214,10 @@ namespace DiscreteDeviceAssigner
         private void RemoveDeviceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DeviceData data = contextMenuStrip.Tag as DeviceData;
-            if (MessageBox.Show("Do you want to remove the next device“" + data.Item1.Name + "”from the next VM“" + data.Item2.Name + "”?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            if (data == null || data.Item1 == null || data.Item2 == null)
+                return;
+                
+            if (MessageBox.Show($"Do you want to remove the next device \"{data.Item2.LocationPath}\" from the next VM \"{data.Item1.Name}\"?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
                 try
                 {
@@ -168,6 +235,8 @@ namespace DiscreteDeviceAssigner
         private void CopyAddressToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DeviceData data = contextMenuStrip.Tag as DeviceData;
+            if (data == null || data.Item2 == null)
+                return;
             Clipboard.SetText(data.Item2.LocationPath);
         }
 
@@ -181,6 +250,9 @@ namespace DiscreteDeviceAssigner
         private void GCCTtoolStripMenuItem_Click(object sender, EventArgs e)
         {
             DeviceData data = contextMenuStrip.Tag as DeviceData;
+            if (data == null || data.Item1 == null)
+                return;
+                
             try
             {
                 PowerShellWrapper.SetGuestControlledCacheTypes(data.Item1, !GCCTtoolStripMenuItem.Checked);
@@ -197,12 +269,25 @@ namespace DiscreteDeviceAssigner
             if (e.KeyCode == Keys.Enter)
             {
                 DeviceData data = contextMenuStrip.Tag as DeviceData;
+                if (data == null || data.Item1 == null)
+                    return;
+                    
                 ulong mb;
                 if (ulong.TryParse(HMMIOtoolStripTextBox.Text, out mb))
                 {
                     var vm = data.Item1;
                     ulong bytes = mb * 1024 * 1024;
-                    if (bytes != vm.HighMemoryMappedIoSpace && bytes != 0)
+                    ulong currentHighMMIO = 0;
+                    try
+                    {
+                        currentHighMMIO = vm.HighMemoryMappedIoSpace;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Warning: Could not get HighMemoryMappedIoSpace: {ex.Message}");
+                    }
+                    
+                    if (bytes != currentHighMMIO && bytes != 0)
                     {
                         try
                         {
@@ -219,7 +304,16 @@ namespace DiscreteDeviceAssigner
                 }
 
                 //Failed
-                HMMIOtoolStripTextBox.Text = (data.Item1.HighMemoryMappedIoSpace / 1024 / 1024).ToString();
+                ulong highMMIO = 0;
+                try
+                {
+                    highMMIO = data.Item1.HighMemoryMappedIoSpace;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Could not get HighMemoryMappedIoSpace: {ex.Message}");
+                }
+                HMMIOtoolStripTextBox.Text = (highMMIO / 1024 / 1024).ToString();
             }
         }
 
@@ -229,6 +323,9 @@ namespace DiscreteDeviceAssigner
             if (e.KeyCode == Keys.Enter)
             {
                 DeviceData data = contextMenuStrip.Tag as DeviceData;
+                if (data == null || data.Item1 == null)
+                    return;
+                    
                 uint mb;
                 if (uint.TryParse(LMMIOtoolStripTextBox.Text, out mb))
                 {
@@ -240,7 +337,10 @@ namespace DiscreteDeviceAssigner
                         //This sentence will inexplicably throw an exception
                         lowMMIO = data.Item1.LowMemoryMappedIoSpace;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Warning: Could not get LowMemoryMappedIoSpace: {ex.Message}");
+                    }
                     if ((lowMMIO == 0 || bytes != lowMMIO) && bytes != 0)
                     {
                         try
@@ -258,7 +358,16 @@ namespace DiscreteDeviceAssigner
                 }
 
                 //Failed
-                LMMIOtoolStripTextBox.Text = (data.Item1.LowMemoryMappedIoSpace / 1024 / 1024).ToString();
+                uint currentLowMMIO = 0;
+                try
+                {
+                    currentLowMMIO = data.Item1.LowMemoryMappedIoSpace;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Could not get LowMemoryMappedIoSpace: {ex.Message}");
+                }
+                LMMIOtoolStripTextBox.Text = (currentLowMMIO / 1024 / 1024).ToString();
             }
         }
 
