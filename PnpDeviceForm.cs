@@ -32,28 +32,18 @@ namespace DiscreteDeviceAssigner
 
         private void UpdateDevices()
         {
-            if (Devices == null)
-                return;
-                
             listView1.BeginUpdate();
             listView1.Items.Clear();
             foreach (var dev in Devices)
             {
-                if (dev == null)
-                    continue;
-                    
-                var deviceIdProp = dev.CimInstanceProperties["DeviceId"];
-                if (deviceIdProp == null || deviceIdProp.Value == null)
-                    continue;
-                    
-                string id = deviceIdProp.Value as string;
+                string id = dev.CimInstanceProperties["DeviceId"].Value as string;
                 if (id == null) continue;
 
                 string status = dev.CimInstanceProperties["Status"] != null ? dev.CimInstanceProperties["Status"].Value as string : null;
                 string clas = dev.CimInstanceProperties["PnpClass"] != null ? dev.CimInstanceProperties["PnpClass"].Value as string : null;
                 string name = dev.CimInstanceProperties["Name"] != null ? dev.CimInstanceProperties["Name"].Value as string : null;
 
-                if ((Search != null && name != null && name.IndexOf(Search, StringComparison.OrdinalIgnoreCase) >= 0) || Search == null)
+                if (Search != null && name != null && name.IndexOf(Search, StringComparison.OrdinalIgnoreCase) >= 0 || Search == null)
                 {
                     listView1.Items.Add(new ListViewItem(new string[] { status == null ? "" : status, clas == null ? "" : clas, name == null ? "" : name, id })
                     {
@@ -66,17 +56,8 @@ namespace DiscreteDeviceAssigner
 
         private void PnpDeviceForm_Load(object sender, EventArgs e)
         {
-            try
-            {
-                Devices = PowerShellWrapper.GetPnpDevice();
-                UpdateDevices();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading devices: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Devices = new Collection<CimInstance>();
-                UpdateDevices();
-            }
+            Devices = PowerShellWrapper.GetPnpDevice();
+            UpdateDevices();
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -87,7 +68,14 @@ namespace DiscreteDeviceAssigner
             }
             else
             {
-                Search = textBox1.Text;
+                try
+                {
+                    Search = textBox1.Text;
+                }
+                catch
+                {
+                    Search = null;
+                }
             }
             UpdateDevices();
         }
